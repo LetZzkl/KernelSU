@@ -47,7 +47,7 @@ endif
 obj-$(CONFIG_KSU) += kernelsu.o
 
 
-KSU_MANUAL_VERSION := 12554
+KSU_MANUAL_VERSION := 12555
 
 ifeq ($(strip $(KSU_MANUAL_VERSION)),)
     ifeq ($(shell test -e $(srctree)/$(src)/../.git; echo $$?),0)
