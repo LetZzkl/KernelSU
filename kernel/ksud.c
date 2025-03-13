@@ -29,19 +29,6 @@
 
 #define KERNEL_VERSION_5_10 KERNEL_VERSION(5, 10, 0)
 
-// Add Auto Add Symbol Export
-#if LINUX_VERSION_CODE < KERNEL_VERSION_5_10 || defined(CONFIG_KSU_HOOK)
-bool ksu_vfs_read_hook = true;
-bool ksu_execveat_hook = true;
-bool ksu_input_hook = false;
-#endif
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION_5_10 || defined(CONFIG_KSU_HOOK)
-EXPORT_SYMBOL(ksu_vfs_read_hook);
-EXPORT_SYMBOL(ksu_execveat_hook);
-EXPORT_SYMBOL(ksu_input_hook);
-#endif
-
 static const char KERNEL_SU_RC[] =
     "\n"
     "on post-fs-data\n"
@@ -63,10 +50,16 @@ static void stop_execve_hook();
 static void stop_input_hook();
 
 #ifdef CONFIG_KPROBES
-#endif
 static struct work_struct stop_vfs_read_work;
 static struct work_struct stop_execve_hook_work;
 static struct work_struct stop_input_hook_work;
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION_5_10 || defined(CONFIG_KSU_VFS)
+bool ksu_vfs_read_hook __read_mostly = true;
+bool ksu_execveat_hook __read_mostly = true;
+bool ksu_input_hook __read_mostly = true;
+#endif
 
 #ifdef CONFIG_KSU_SUSFS_SUS_SU
 bool ksu_devpts_hook = false;
@@ -630,29 +623,20 @@ static void stop_input_hook()
 int ksu_ksud_init()
 {
 #ifdef CONFIG_KPROBES
-    int ret = register_kprobe(&execve_kp);
-    if (ret < 0) {
-        pr_err("Failed to register execve_kp: %d\n", ret);
-        return ret;
-    }
-    pr_info("ksud: execve_kp registered\n");
+    int ret;
+
+    ret = register_kprobe(&execve_kp);
+    pr_info("ksud: execve_kp: %d\n", ret);
 
     ret = register_kprobe(&vfs_read_kp);
-    if (ret < 0) {
-        pr_err("Failed to register vfs_read_kp: %d\n", ret);
-        unregister_kprobe(&execve_kp);
-        return ret;
-    }
-    pr_info("ksud: vfs_read_kp registered\n");
+    pr_info("ksud: vfs_read_kp: %d\n", ret);
 
     ret = register_kprobe(&input_event_kp);
-    if (ret < 0) {
-        pr_err("Failed to register input_event_kp: %d\n", ret);
-        unregister_kprobe(&execve_kp);
-        unregister_kprobe(&vfs_read_kp);
-        return ret;
-    }
-    pr_info("ksud: input_event_kp registered\n");
+    pr_info("ksud: input_event_kp: %d\n", ret);
+
+    INIT_WORK(&stop_vfs_read_work, do_stop_vfs_read_hook);
+    INIT_WORK(&stop_execve_hook_work, do_stop_execve_hook);
+    INIT_WORK(&stop_input_hook_work, do_stop_input_hook);
 #endif
     return 0; 
 }

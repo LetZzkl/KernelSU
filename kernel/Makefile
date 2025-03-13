@@ -128,21 +128,11 @@ KERNEL_VERSION := $(VERSION).$(PATCHLEVEL)
 $(info -- KERNEL_VERSION: $(KERNEL_VERSION))
 
 # Checks if CONFIG_KSU_HOOK is defined.
-ifeq ($(strip $(CONFIG_KSU_HOOK)),y)
-    $(info -- CONFIG_KSU_HOOK is enabled.)
-    ccflags-y += -DCONFIG_KSU_HOOK
+ifeq ($(strip $(CONFIG_KSU_VFS)),y)
+    $(info -- CONFIG_KSU_VFS is enabled.)
+    ccflags-y += -DCONFIG_KSU_VFS
 else
-    $(info -- CONFIG_KSU_HOOK is not enabled.)
-endif
-
-
-ifeq ($(NEED_KPROBES),TRUE)
-    $(info -- Kernel version is >= 5.10, using KProbes.)
-    ifeq ($(strip $(CONFIG_KSU_HOOK)),y)
-        $(info -- CONFIG_KSU_HOOK is enabled, overriding kernel version check.)
-    else
-        $(info -- CONFIG_KSU_HOOK is not enabled, using default behavior for kernel version >= 5.10.)
-    endif
+    $(info -- CONFIG_KSU_VFS is not enabled.)
 endif
 
 ccflags-y += -DEXPECTED_SIZE=$(KSU_EXPECTED_SIZE)

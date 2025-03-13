@@ -16,7 +16,7 @@ config KSU_DEBUG
 	help
 	  Enable KernelSU debug mode.
 
-config KSU_HOOK
+config KSU_VFS
   bool "Enable KernelSU Hook"
   default n
   help
